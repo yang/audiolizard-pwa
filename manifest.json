@@ -1,10 +1,9 @@
 {
-  "name": "Web Share Target Test App",
-  "short_name": "Target Test",
+  "name": "Audiolizard",
+  "short_name": "Audiolizard",
   "start_url": "sharetarget.html",
   "display": "standalone",
   "share_target": {
-    "url_template": "sharetarget.html?oldapi=true&title={title}&text={text}&url={url}",
     "action": "sharetarget.html",
     "params": {
       "title": "title",

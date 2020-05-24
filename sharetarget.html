@@ -15,37 +15,12 @@
   </style>
 </head>
 <body>
-  <h1>Web Share Target Test App</h1>
+  <h1>AudioLizard Client PWA</h1>
+  <form id="keyForm">
+    <input id="keyInput" name="key" type="text"/>
+    <button type="submit">Submit</button>
+  </form>
   <div id="output"></div>
-  <p>This is a test app for the <a href="https://github.com/WICG/web-share-target">Web
-  Share Target API</a>. It will only work in browsers that have implemented the
-  draft proposal. At the time of writing, this works with:</p>
-  <ul>
-    <li>Google Chrome for Chrome OS, Windows, or Linux, with
-      chrome://flags#enable-experimental-web-platform-features enabled.
-      <ul>
-        <li>To "register" this app with Google Chrome, click the Chrome menu
-          &rarr; More tools &rarr; Add to desktop/shelf (you can cancel the
-          dialog; this just forces the manifest to download). Then it should
-          show up as a target when using <a href="https://github.com/WICG/web-share">Web
-          Share</a> (<a href="https://wicg.github.io/web-share/demos/share.html">demo
-          site</a>).
-        </li>
-      </ul>
-    </li>
-    <li>Google <a
-        href="https://play.google.com/store/apps/details?id=com.chrome.dev">Chrome
-        Dev</a> or <a
-      href="https://play.google.com/store/apps/details?id=com.chrome.canary">Chrome
-      Canary</a> for Android.
-      <ul>
-        <li>To "register" this app with the Android OS, click the Chrome menu
-          &rarr; Add to home screen. Then it should show up as a target when
-          sharing from any other Android app (including Web Share).
-        </li>
-      </ul>
-    </li>
-  </ul>
   <script>
     'use strict';
 
@@ -63,24 +38,46 @@
         console.error(message);
       else
         console.log(message);
-      var p = document.createElement('p');
+      const p = document.createElement('p');
       if (isError)
         p.setAttribute('class', 'error');
       document.querySelector('#output').appendChild(p);
       p.appendChild(document.createTextNode(message));
     }
 
-    function onLoad() {
-      var parsedUrl = new URL(window.location.toString());
+    async function onLoad() {
+      const keyInput = document.getElementById('keyInput');
+      const keyForm = document.getElementById('keyForm');
+
+      if (localStorage.secretKey) {
+        keyInput.value = localStorage.secretKey;
+      }
+
+      keyForm.addEventListener('submit', e => {
+        e.preventDefault();
+        localStorage.secretKey = keyInput.value;
+      });
+
+      const parsedUrl = new URL(window.location.toString());
       logText("Title shared: " + parsedUrl.searchParams.get("title"));
       logText("Text shared: " + parsedUrl.searchParams.get("text"));
       logText("URL shared: " + parsedUrl.searchParams.get("url"));
-      // We still have the old "url_template" member in the manifest, which is
-      // how WST was previously specced and implemented in Chrome. If the user
-      // agent uses that method, the "oldapi" parameter will be set.
-      if (parsedUrl.searchParams.get("oldapi")) {
-        logText("Your browser is using the deprecated 'url_template' Web Share "
-                + "Target API.", true);
+
+      const url = parsedUrl.searchParams.get('text');
+      if (url) {
+        const params = new URLSearchParams(Object.entries({
+          url,
+          key: localStorage.secretKey
+        }));
+        const enqueueUrl = `${document.location.origin}/audiolizard/api/v1/enqueue?${params}`;
+        const res = await fetch(
+                enqueueUrl,
+        );
+        if (!res.ok) {
+          logText("Response: " + await res.text());
+        } else {
+          window.close();
+        }
       }
     }
 
